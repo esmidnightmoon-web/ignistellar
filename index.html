@@ -170,10 +170,12 @@ label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px;letter-s
 
 <div style="max-width:900px;margin:0 auto;padding:0 1rem;">
   <div class="tabs">
-    <button class="tab active" onclick="sw('horas')" id="tab-horas"></button>
-    <button class="tab" onclick="sw('carta')" id="tab-carta"></button>
-    <button class="tab" onclick="sw('angel')" id="tab-angel"></button>
+    <button class="tab active" onclick="sw('horas')" id="tab-horas">⏱ Hora Planetaria</button>
+    <button class="tab" onclick="sw('carta')" id="tab-carta">✦ Carta Natal</button>
+    <button class="tab" onclick="sw('angel')" id="tab-angel">✨ Números Ángel</button>
     <button class="tab" onclick="sw('servicios')" id="tab-servicios">✦ Servicios</button>
+    <button class="tab" onclick="sw('calendario')" id="tab-calendario">🌙 Calendario</button>
+    <button class="tab" onclick="sw('sinastria')" id="tab-sinastria">💑 Sinastría</button>
   </div>
 </div>
 
@@ -322,9 +324,9 @@ function t(key){ return T[LANG][key] || key; }
 
 
 function applyLang(){
-  document.getElementById('tab-horas').textContent = t('tab1');
-  document.getElementById('tab-carta').textContent = t('tab2');
-  document.getElementById('tab-angel').textContent = t('tab3');
+  // tab-horas text hardcoded
+  // tab-carta text hardcoded
+  // tab-angel text hardcoded
   document.getElementById('tab-servicios').textContent = '✦ Servicios';
   document.getElementById('sttl-24h').textContent = t('sttl24');
   document.getElementById('sttl-meanings').textContent = t('sttlMeanings');
@@ -349,7 +351,7 @@ function applyLang(){
 // NAVIGATION
 // ═══════════════════════════════════════
 function sw(t){
-  ['horas','carta','angel','servicios'].forEach(s=>{
+  ['horas','carta','angel','servicios','calendario','sinastria'].forEach(s=>{
     document.getElementById('s-'+s).classList.toggle('active',s===t);
     document.getElementById('tab-'+s)&&document.getElementById('tab-'+s).classList.toggle('active',s===t);
   });
@@ -495,8 +497,10 @@ function updateClock(){
   document.getElementById('clk').textContent=now.toLocaleTimeString(LANG==='es'?'es':'en',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
   document.getElementById('clk-date').textContent=now.toLocaleDateString(LANG==='es'?'es':'en',{weekday:'long',day:'numeric',month:'long'});
 }
-setInterval(()=>{updateClock();renderHoras();},1000);
-updateClock();renderHoras();
+setInterval(()=>{ 
+  try{updateClock();}catch(e){} 
+  try{renderHoras();}catch(e){}
+},1000);
 
 // ═══════════════════════════════════════
 // CIUDAD SEARCH
@@ -641,6 +645,11 @@ function calcChart(){
     <div class="tab-inner" onclick="showInner('planets')">${t('planetas')}</div>
     <div class="tab-inner" onclick="showInner('aspects')">${t('aspectos')}</div>
     <div class="tab-inner" onclick="showInner('transits')">${t('transitos')}</div>
+    <div class="tab-inner" onclick="showInner('personalidad')">👤 Personalidad</div>
+    <div class="tab-inner" onclick="showInner('carrera')">💼 Carrera</div>
+    <div class="tab-inner" onclick="showInner('dinero')">💰 Dinero</div>
+    <div class="tab-inner" onclick="showInner('amor')">❤️ Amor</div>
+    <div class="tab-inner" onclick="showInner('mision')">🌟 Misión</div>
     <div class="tab-inner" onclick="showInner('ai')">${t('ia')}</div>
   </div>
 
@@ -683,11 +692,18 @@ function calcChart(){
       </div>
       <div id="ai-content" style="font-size:13px;color:var(--text2);">${t('interpHint')}</div>
     </div>
-  </div>`;
+  </div>
+
+  <div id="inner-personalidad" style="display:none;">${buildPersonalidad(planets,ascDeg)}</div>
+  <div id="inner-carrera" style="display:none;">${buildCarrera(planets,ascDeg)}</div>
+  <div id="inner-dinero" style="display:none;">${buildDinero(planets)}</div>
+  <div id="inner-amor" style="display:none;">${buildAmor(planets)}</div>
+  <div id="inner-mision" style="display:none;">${buildMision(planets)}</div>
+  `;
 }
 
 function showInner(tab){
-  ['wheel','planets','aspects','transits','ai'].forEach((s,i)=>{
+  ['wheel','planets','aspects','transits','personalidad','carrera','dinero','amor','mision','ai'].forEach((s,i)=>{
     const el=document.getElementById('inner-'+s);
     if(el)el.style.display=s===tab?'block':'none';
     document.querySelectorAll('.tab-inner')[i]&&document.querySelectorAll('.tab-inner')[i].classList.toggle('active',s===tab);
@@ -914,9 +930,556 @@ function renderAngelCard(num,db,el){
   <button class="btn btn-ghost" style="margin-top:8px;font-size:13px;" onclick="document.getElementById('angel-result').style.display='none';document.getElementById('angel-input').value='';">${t('anotherNum')}</button>`;
 }
 
+
+// ═══════════════════════════════════════
+// INTERPRETACIONES EXPANDIDAS
+// ═══════════════════════════════════════
+const PERSONALIDAD = {
+  Aries:{desc:'Eres un pionero nato. Tu energía es directa, apasionada e impulsiva. Lideras con valentía y necesitas acción constante para sentirte vivo. Tu mayor don es tu coraje sin igual.',fortalezas:['Valentía','Liderazgo','Iniciativa','Energía'],desafios:['Impaciencia','Impulsividad','Egocentrismo']},
+  Tauro:{desc:'Eres la roca que sostiene el mundo. Tu energía es estable, sensual y perseverante. Construyes con paciencia y aprecias la belleza en todas sus formas. Tu mayor don es tu inquebrantable determinación.',fortalezas:['Perseverancia','Lealtad','Sensualidad','Practicidad'],desafios:['Terquedad','Resistencia al cambio','Posesividad']},
+  Géminis:{desc:'Eres pura curiosidad en movimiento. Tu mente es ágil, versátil y siempre hambrienta de nuevas ideas. Puedes ver todos los ángulos de una situación. Tu mayor don es tu brillante adaptabilidad.',fortalezas:['Inteligencia','Adaptabilidad','Comunicación','Ingenio'],desafios:['Inconstancia','Superficialidad','Dispersión']},
+  Cáncer:{desc:'Eres profundidad emocional hecha persona. Tienes una intuición extraordinaria y un corazón capaz de amar sin límites. El hogar y la familia son tu universo. Tu mayor don es tu empatía sanadora.',fortalezas:['Empatía','Intuición','Lealtad','Nutrición'],desafios:['Sensibilidad excesiva','Apego','Cambios de humor']},
+  Leo:{desc:'Eres luz solar pura. Tu presencia ilumina cualquier lugar y tu corazón es tan grande como generoso. Naciste para brillar, crear y inspirar a otros. Tu mayor don es tu carisma transformador.',fortalezas:['Carisma','Generosidad','Creatividad','Confianza'],desafios:['Ego','Necesidad de aprobación','Dramatismo']},
+  Virgo:{desc:'Eres el maestro de la perfección. Tu mente analítica ve lo que otros no ven. Sirves con dedicación y mejoras todo lo que tocas. Tu mayor don es tu capacidad de llevar las cosas a su máximo potencial.',fortalezas:['Análisis','Dedicación','Servicio','Practicidad'],desafios:['Perfeccionismo','Autocrítica','Preocupación']},
+  Libra:{desc:'Eres armonía y justicia encarnadas. Tu don para las relaciones y la diplomacia es incomparable. Ves la belleza en todo y buscas el equilibrio en cada situación. Tu mayor don es tu capacidad de unir.',fortalezas:['Diplomacia','Justicia','Encanto','Equilibrio'],desafios:['Indecisión','Dependencia','Evitar conflictos']},
+  Escorpio:{desc:'Eres profundidad y poder transformador. Vas más allá de las apariencias y encuentras la verdad en las sombras. Tu intensidad es tu mayor fortaleza. Tu mayor don es tu capacidad de renacer.',fortalezas:['Intensidad','Perspicacia','Determinación','Transformación'],desafios:['Celos','Control','Rencor']},
+  Sagitario:{desc:'Eres libertad y sabiduría en movimiento constante. Tu optimismo es contagioso y tu visión del mundo, expansiva. Buscas el significado de todo. Tu mayor don es tu capacidad de inspirar y enseñar.',fortalezas:['Optimismo','Sabiduría','Aventura','Honestidad'],desafios:['Exceso','Falta de tacto','Inconstancia']},
+  Capricornio:{desc:'Eres el arquitecto del destino. Tu disciplina y ambición no tienen límites. Construyes imperios con paciencia y estrategia. Tu mayor don es tu capacidad de materializar lo que otros solo sueñan.',fortalezas:['Disciplina','Ambición','Responsabilidad','Estrategia'],desafios:['Rigidez','Frialdad','Workaholismo']},
+  Acuario:{desc:'Eres el visionario del futuro. Piensas diferente, actúas diferente y cambias el mundo siendo tú mismo. Tu humanismo es genuino. Tu mayor don es tu capacidad de ver lo que aún no existe.',fortalezas:['Originalidad','Humanismo','Visión','Independencia'],desafios:['Distancia emocional','Rebeldía excesiva','Desapego']},
+  Piscis:{desc:'Eres el océano de la compasión universal. Tu sensibilidad espiritual te conecta con dimensiones que otros no perciben. Sanas con tu sola presencia. Tu mayor don es tu amor incondicional.',fortalezas:['Compasión','Espiritualidad','Creatividad','Intuición'],desafios:['Escapismo','Límites difusos','Idealismo excesivo']},
+};
+
+const CARRERA = {
+  Aries:{vocacion:'Emprendimiento, deportes, milicia, cirugía, liderazgo ejecutivo',estilo:'Trabajas mejor cuando lideras y tienes autonomía total. Detestas que te digan qué hacer.',consejo:'Tu impaciencia puede sabotear proyectos a largo plazo. Aprende a delegar.',planetaClave:'Marte rige tu ambición y drive profesional.'},
+  Tauro:{vocacion:'Finanzas, arte, música, gastronomía, bienes raíces, agricultura',estilo:'Trabajas mejor con estabilidad, rutina y resultados tangibles. El caos te bloquea.',consejo:'Tu resistencia al cambio puede frenar tu crecimiento. Abraza la innovación.',planetaClave:'Venus rige tu sentido estético y valor en el mercado.'},
+  Géminis:{vocacion:'Comunicación, periodismo, escritura, ventas, educación, tecnología',estilo:'Necesitas variedad y estimulación intelectual constante. Un trabajo rutinario te mata.',consejo:'Tu dispersión puede impedirte terminar lo que empiezas. Enfoca tu energía.',planetaClave:'Mercurio rige tu comunicación y agilidad mental.'},
+  Cáncer:{vocacion:'Psicología, enfermería, trabajo social, gastronomía, bienes raíces, educación infantil',estilo:'Trabajas mejor en ambientes cálidos donde puedes cuidar y nutrir a otros.',consejo:'Tu sensibilidad puede hacerte tomar decisiones desde el miedo. Confía en tu intuición.',planetaClave:'La Luna rige tus ciclos de productividad y creatividad.'},
+  Leo:{vocacion:'Entretenimiento, política, dirección ejecutiva, artes, enseñanza, moda',estilo:'Necesitas reconocimiento y un escenario donde brillar. Lideras con el corazón.',consejo:'Tu necesidad de aprobación puede hacerte depender de otros. Valídate a ti mismo.',planetaClave:'El Sol rige tu identidad profesional y visibilidad.'},
+  Virgo:{vocacion:'Medicina, investigación, análisis, nutrición, contabilidad, escritura técnica',estilo:'Eres el más dedicado y meticuloso del zodiaco. Tu trabajo siempre es impecable.',consejo:'Tu perfeccionismo puede paralizarte. El hecho es más valioso que lo perfecto.',planetaClave:'Mercurio rige tu análisis y precisión profesional.'},
+  Libra:{vocacion:'Derecho, diplomacia, diseño, relaciones públicas, mediación, arte',estilo:'Trabajas mejor en equipo y en ambientes armoniosos. El conflicto te bloquea.',consejo:'Tu indecisión puede costarte oportunidades. Aprende a decidir con más rapidez.',planetaClave:'Venus rige tu capacidad de crear relaciones y alianzas profesionales.'},
+  Escorpio:{vocacion:'Psicología, investigación, medicina, finanzas, ciencias ocultas, estrategia',estilo:'Eres implacable cuando te enfocas en un objetivo. Tu intensidad no tiene rival.',consejo:'Tu desconfianza puede impedirte colaborar eficazmente. Abre tu círculo.',planetaClave:'Plutón rige tu poder de transformación y regeneración profesional.'},
+  Sagitario:{vocacion:'Filosofía, enseñanza, derecho, viajes, publicaciones, espiritualidad',estilo:'Necesitas libertad, aventura y aprendizaje continuo en tu trabajo.',consejo:'Tu falta de disciplina puede dejarte muchos proyectos a medias. Termina lo que empiezas.',planetaClave:'Júpiter rige tu expansión, suerte y oportunidades profesionales.'},
+  Capricornio:{vocacion:'Administración, política, ingeniería, arquitectura, finanzas, alta dirección',estilo:'Eres el trabajador más disciplinado del zodiaco. El éxito llega tarde pero se queda.',consejo:'No sacrifiques tu bienestar por el trabajo. El descanso también es productivo.',planetaClave:'Saturno rige tu ambición, estructura y legado profesional.'},
+  Acuario:{vocacion:'Tecnología, ciencias, activismo, innovación, humanitarismo, astrología',estilo:'Necesitas libertad para innovar y romper esquemas. Las reglas rígidas te sofocan.',consejo:'Tu excesiva independencia puede aislarte. El trabajo en equipo multiplica tu impacto.',planetaClave:'Urano rige tus saltos cuánticos y genialidad profesional.'},
+  Piscis:{vocacion:'Arte, música, psicología, espiritualidad, medicina alternativa, cine, escritura',estilo:'Trabajas mejor siguiendo tu intuición y con propósito espiritual claro.',consejo:'Tus límites difusos pueden hacer que otros abusen de tu generosidad. Aprende a decir no.',planetaClave:'Neptuno rige tu inspiración, visión y capacidad creativa.'},
+};
+
+const DINERO = {
+  Aries:{estilo:'Ganas dinero con rapidez y lo gastas igual. Tu relación con el dinero es impulsiva.',fortaleza:'Eres emprendedor nato. Tu iniciativa crea oportunidades financieras.',desafio:'El gasto impulsivo puede dejarte sin reservas. Crea un fondo de emergencia.',afirmacion:'El dinero fluye hacia mí con facilidad y yo lo administro con sabiduría.'},
+  Tauro:{estilo:'Tienes instinto natural para el dinero y la inversión. Construyes riqueza con paciencia.',fortaleza:'Eres el más estable financieramente del zodiaco. Ahorras con constancia.',desafio:'Tu apego al dinero puede volverse materialismo. El dinero es energía, no seguridad.',afirmacion:'Soy un imán de abundancia. El dinero llega y se multiplica en mis manos.'},
+  Géminis:{estilo:'Tienes múltiples fuentes de ingreso. Tu versatilidad es tu mayor activo financiero.',fortaleza:'Generas dinero con tus palabras, ideas y conexiones. Eres un networker brillante.',desafio:'La dispersión puede diluir tu potencial financiero. Enfoca en 2-3 fuentes principales.',afirmacion:'Mis ideas son valiosas y el universo me paga abundantemente por compartirlas.'},
+  Cancer:{estilo:'El dinero te da seguridad emocional. Tu intuición para los negocios es extraordinaria.',fortaleza:'Tu instinto para detectar oportunidades de negocio es casi psíquico.',desafio:'El miedo a la escasez puede bloquearte. La abundancia es tu estado natural.',afirmacion:'Me siento seguro y abundante. El dinero fluye hacia mi hogar con generosidad.'},
+  Leo:{estilo:'Gastas con generosidad y atraes dinero con tu carisma y presencia.',fortaleza:'Tu confianza atrae inversores, clientes y oportunidades de alto nivel.',desafio:'Tu gusto por el lujo puede superar tus ingresos. Equilibra imagen con ahorro.',afirmacion:'Soy próspero y generoso. Mi abundancia inspira y eleva a quienes me rodean.'},
+  Virgo:{estilo:'Eres el más meticuloso con el dinero. Analizas cada gasto y optimizas cada ingreso.',fortaleza:'Tu disciplina financiera te protege de crisis. Siempre tienes reservas.',desafio:'Tu perfeccionismo puede hacerte perder oportunidades por miedo al riesgo.',afirmacion:'Administro mi dinero con sabiduría y me permito recibir abundancia sin culpa.'},
+  Libra:{estilo:'Atraes dinero a través de las relaciones y asociaciones estratégicas.',fortaleza:'Tus alianzas y colaboraciones generan las mayores oportunidades financieras.',desafio:'Gastas en imagen y en complacer a otros. Aprende a invertir en ti primero.',afirmacion:'El dinero llega a mí a través de relaciones hermosas y alianzas poderosas.'},
+  Escorpio:{estilo:'Tienes instinto para detectar recursos ocultos y oportunidades financieras profundas.',fortaleza:'Inversiones, herencias, transformación de recursos — todo te funciona.',desafio:'El control excesivo del dinero puede bloquear su flujo. Suelta y confía.',afirmacion:'Transformo cada recurso en abundancia. El dinero trabaja para mí con intensidad.'},
+  Sagitario:{estilo:'El dinero llega cuando sigues tu propósito y expansión. La abundancia te sigue.',fortaleza:'Tu optimismo y visión atraen oportunidades financieras internacionales.',desafio:'El exceso y la falta de planificación pueden dejarte sin reservas.',afirmacion:'La abundancia es mi estado natural. El universo siempre provee más de lo que necesito.'},
+  Capricornio:{estilo:'Construyes riqueza lenta pero sólidamente. Tus finanzas mejoran con la edad.',fortaleza:'Eres el más disciplinado financieramente. El éxito material es tu destino.',desafio:'El trabajo excesivo puede costarte tu salud y relaciones. El equilibrio es riqueza.',afirmacion:'Construyo un legado de abundancia con disciplina, paciencia y visión a largo plazo.'},
+  Acuario:{estilo:'Generas dinero de formas innovadoras y poco convencionales. El futuro te da riqueza.',fortaleza:'Tu originalidad crea productos y servicios únicos que el mercado necesita.',desafio:'Tu desapego al dinero puede hacer que no valores suficiente tu trabajo.',afirmacion:'Mis ideas innovadoras crean abundancia para mí y para el mundo.'},
+  Piscis:{estilo:'Atraes dinero a través de tu creatividad, espiritualidad y sensibilidad.',fortaleza:'Tu conexión con la abundancia universal es profunda. Manifiestas con facilidad.',desafio:'Tus límites difusos pueden hacer que regales tu energía sin compensación justa.',afirmacion:'Recibo con gratitud la abundancia del universo. Soy merecedor de prosperidad infinita.'},
+};
+
+const AMOR = {
+  Aries:{estilo:'Amas con fuego e intensidad. Eres apasionado, directo y conquistador.',busca:'Una pareja que te rete, admire y no se intimide por tu fuerza.',compatibles:'Leo, Sagitario, Géminis, Acuario',desafio:'Tu impaciencia y egocentrismo pueden dañar tus relaciones. Aprende a escuchar.',lenguaje:'Actos de servicio y tiempo de calidad'},
+  Tauro:{estilo:'Amas con lealtad y sensualidad profunda. Eres el amante más fiel del zodiaco.',busca:'Estabilidad, confianza y una conexión física y emocional profunda.',compatibles:'Virgo, Capricornio, Cáncer, Piscis',desafio:'Tu posesividad puede asfixiar a tu pareja. El amor real da libertad.',lenguaje:'Toque físico y regalos'},
+  Geminis:{estilo:'Amas con la mente. La conexión intelectual es tu mayor afrodisíaco.',busca:'Una pareja que te estimule mentalmente y te dé espacio para ser libre.',compatibles:'Libra, Acuario, Aries, Leo',desafio:'Tu inconstancia puede hacer que tu pareja dude de tu compromiso.',lenguaje:'Palabras de afirmación'},
+  Cancer:{estilo:'Amas con toda el alma. Tu amor es nutritivo, protector y profundamente emocional.',busca:'Seguridad emocional, lealtad y un hogar que construir juntos.',compatibles:'Escorpio, Piscis, Tauro, Virgo',desafio:'Tu necesidad de seguridad puede volverse dependencia emocional.',lenguaje:'Tiempo de calidad y actos de cuidado'},
+  Leo:{estilo:'Amas con generosidad y drama divino. Eres el amante más romántico del zodiaco.',busca:'Admiración, lealtad y alguien que aprecie tu grandeza.',compatibles:'Aries, Sagitario, Géminis, Libra',desafio:'Tu necesidad de ser el centro puede eclipsar a tu pareja.',lenguaje:'Palabras de afirmación y regalos'},
+  Virgo:{estilo:'Amas a través del servicio. Tu amor se demuestra en los detalles y el cuidado.',busca:'Una pareja inteligente, confiable y que valore tu dedicación.',compatibles:'Tauro, Capricornio, Cáncer, Escorpio',desafio:'Tu perfeccionismo puede hacer que critiques demasiado a tu pareja.',lenguaje:'Actos de servicio'},
+  Libra:{estilo:'Amas con encanto, romanticismo y búsqueda constante del equilibrio.',busca:'Armonía, belleza y una relación donde ambos brillen por igual.',compatibles:'Géminis, Acuario, Leo, Sagitario',desafio:'Tu indecisión y miedo al conflicto pueden crear resentimientos.',lenguaje:'Tiempo de calidad y regalos'},
+  Escorpio:{estilo:'Amas con una intensidad que pocos pueden manejar. Todo o nada.',busca:'Profundidad, lealtad absoluta y una conexión que trascienda lo físico.',compatibles:'Cáncer, Piscis, Virgo, Capricornio',desafio:'Los celos y el control pueden destruir lo que más amas.',lenguaje:'Tiempo de calidad e intimidad física'},
+  Sagitario:{estilo:'Amas con libertad, aventura y filosofía. El amor es tu gran viaje.',busca:'Una pareja que sea también tu compañera de aventuras y tu maestra.',compatibles:'Aries, Leo, Libra, Acuario',desafio:'Tu miedo al compromiso puede alejarte de relaciones profundas.',lenguaje:'Palabras de afirmación y aventuras compartidas'},
+  Capricornio:{estilo:'Amas con lealtad inquebrantable y actos concretos. Poco de palabras, mucho de hechos.',busca:'Alguien ambicioso, confiable y que comparta tu visión de futuro.',compatibles:'Tauro, Virgo, Escorpio, Piscis',desafio:'Tu frialdad emocional puede hacer que tu pareja se sienta sola.',lenguaje:'Actos de servicio y tiempo de calidad'},
+  Acuario:{estilo:'Amas con la mente y el alma. La amistad es la base de tu amor.',busca:'Una pareja que sea tu igual intelectual y respete tu independencia.',compatibles:'Géminis, Libra, Aries, Sagitario',desafio:'Tu distancia emocional puede hacer que parezcas indiferente.',lenguaje:'Palabras de afirmación y espacio personal'},
+  Piscis:{estilo:'Amas con tu alma entera. Eres el amante más romántico y espiritual del zodiaco.',busca:'Una conexión espiritual profunda y un amor que trascienda lo mundano.',compatibles:'Cáncer, Escorpio, Tauro, Capricornio',desafio:'Tu idealismo puede hacer que te enamores de quien quieres que sea, no de quien es.',lenguaje:'Toque físico y tiempo de calidad'},
+};
+
+const MISION = {
+  Aries:{mision:'Liderar con valentía y abrir caminos para que otros puedan seguir.',nodNorte:'Aprender a equilibrar el yo con el nosotros. Tu crecimiento está en la cooperación.',karma:'Vidas pasadas de exceso de independencia. Aprendes a confiar en otros.',don:'Tu coraje inspira a los demás a atreverse a vivir auténticamente.',mantra:'Soy un pionero de luz. Mi valentía abre caminos para la humanidad.'},
+  Tauro:{mision:'Crear belleza, estabilidad y abundancia que nutra a quienes te rodean.',nodNorte:'Aprender a soltar el control y confiar en el flujo divino.',karma:'Vidas pasadas de inestabilidad. Buscas construir fundamentos sólidos.',don:'Tu presencia calma y estabiliza a los demás. Eres un ancla de paz.',mantra:'Soy un creador de belleza y abundancia para el mundo.'},
+  Geminis:{mision:'Ser el puente de comunicación e información entre las personas y las ideas.',nodNorte:'Aprender a profundizar en lugar de solo rozar la superficie.',karma:'Vidas pasadas de aislamiento. Ahora aprendes a conectar y comunicar.',don:'Tu mente brillante puede explicar lo complejo de forma simple y hermosa.',mantra:'Soy un canal de sabiduría e información divina.'},
+  Cancer:{mision:'Crear hogares emocionales seguros donde las almas puedan sanar y crecer.',nodNorte:'Aprender a nutrir sin perder tu propio centro.',karma:'Vidas pasadas de frialdad emocional. Ahora aprecias la vulnerabilidad.',don:'Tu amor sanador crea espacios donde otros se sienten seguros de ser ellos mismos.',mantra:'Soy un sanador emocional. Mi amor transforma y sana.'},
+  Leo:{mision:'Inspirar a otros a brillar y expresar su autenticidad sin miedo.',nodNorte:'Aprender que el mayor liderazgo es empoderar a otros a liderar.',karma:'Vidas pasadas de oscuridad. Ahora manifiestas luz y creatividad.',don:'Tu presencia da permiso a otros de ser grandes. Eres un faro de posibilidad.',mantra:'Soy luz pura. Mi brillo inspira a otros a encontrar el suyo.'},
+  Virgo:{mision:'Servir a la humanidad perfeccionando los sistemas que nos sostienen a todos.',nodNorte:'Aprender a ver el cuadro grande sin perderte en los detalles.',karma:'Vidas pasadas de caos. Ahora traes orden, análisis y perfección.',don:'Tu atención al detalle salva vidas y mejora sistemas enteros.',mantra:'Sirvo con amor y excelencia. Mi trabajo transforma el mundo.'},
+  Libra:{mision:'Ser embajador de la justicia, la paz y la belleza en el mundo.',nodNorte:'Aprender a tomar decisiones propias sin depender de la validación ajena.',karma:'Vidas pasadas de conflicto. Ahora traes armonía y equilibrio.',don:'Tu diplomacia puede unir opuestos y crear paz donde había guerra.',mantra:'Soy un canal de paz y justicia divina en el mundo.'},
+  Escorpio:{mision:'Transformar lo que está roto — en ti mismo y en el mundo — en algo sagrado.',nodNorte:'Aprender a confiar y a ser vulnerable con quienes lo merecen.',karma:'Vidas pasadas de traición. Ahora aprendes el poder de la confianza.',don:'Tu capacidad de transformar el dolor en sabiduría sana a quienes te rodean.',mantra:'Soy un alquimista del alma. Transformo las sombras en luz sagrada.'},
+  Sagitario:{mision:'Expandir la conciencia humana a través de la sabiduría, la filosofía y la aventura.',nodNorte:'Aprender a comprometerte con algo más grande que tú mismo.',karma:'Vidas pasadas de limitación. Ahora exploras sin fronteras.',don:'Tu optimismo y visión dan esperanza a los que han perdido su camino.',mantra:'Soy un maestro de la expansión. Mi sabiduría ilumina el camino de otros.'},
+  Capricornio:{mision:'Construir estructuras y legados que soporten a las generaciones futuras.',nodNorte:'Aprender a equilibrar ambición con ternura y presencia emocional.',karma:'Vidas pasadas de irresponsabilidad. Ahora construyes con integridad.',don:'Tu disciplina y visión crean estructuras que duran siglos.',mantra:'Construyo un legado de luz que trasciende mi tiempo en la Tierra.'},
+  Acuario:{mision:'Catalizar la evolución de la conciencia colectiva hacia un futuro de amor.',nodNorte:'Aprender a conectar emocionalmente sin perder tu individualidad.',karma:'Vidas pasadas de conformismo. Ahora rompes moldes para liberar a otros.',don:'Tu visión del futuro inspira revoluciones de amor y consciencia.',mantra:'Soy un visionario de la nueva humanidad. El futuro comienza en mí.'},
+  Piscis:{mision:'Ser un canal de amor incondicional, sanación y conexión espiritual.',nodNorte:'Aprender a establecer límites sanos sin perder tu compasión.',karma:'Vidas pasadas de dureza. Ahora disuelves barreras con amor puro.',don:'Tu presencia espiritual sana sin que digas una sola palabra.',mantra:'Soy amor en acción. Mi presencia sana y eleva todo lo que toca.'},
+};
+
+function buildPersonalidad(planets, ascDeg) {
+  const sol = toSign(planets[0].lon);
+  const luna = toSign(planets[1].lon);
+  const asc = toSign(ascDeg);
+  const ps = PERSONALIDAD[sol.sign] || {};
+  const pl = PERSONALIDAD[luna.sign] || {};
+  const pa = PERSONALIDAD[asc.sign] || {};
+  return \`<div style="display:flex;flex-direction:column;gap:14px;">
+    <div style="background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.2);border-radius:14px;padding:1.25rem;">
+      <div style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:2px;color:var(--gold);margin-bottom:8px;">☉ PERSONALIDAD SOLAR — \${sol.sym} \${sol.sign}</div>
+      <div style="font-size:14px;line-height:1.8;margin-bottom:12px;">\${ps.desc||''}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div><div style="font-size:11px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;">FORTALEZAS</div>\${(ps.fortalezas||[]).map(f=>\`<div style="font-size:13px;color:#86efac;margin-bottom:3px;">✦ \${f}</div>\`).join('')}</div>
+        <div><div style="font-size:11px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;">DESAFÍOS</div>\${(ps.desafios||[]).map(d=>\`<div style="font-size:13px;color:#fca5a5;margin-bottom:3px;">◆ \${d}</div>\`).join('')}</div>
+      </div>
+    </div>
+    <div style="background:rgba(196,181,212,0.05);border:1px solid rgba(196,181,212,0.2);border-radius:14px;padding:1.25rem;">
+      <div style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:2px;color:var(--text2);margin-bottom:8px;">☽ MUNDO INTERIOR — \${luna.sym} \${luna.sign}</div>
+      <div style="font-size:14px;line-height:1.8;margin-bottom:12px;">\${pl.desc||''}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div><div style="font-size:11px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;">FORTALEZAS</div>\${(pl.fortalezas||[]).map(f=>\`<div style="font-size:13px;color:#86efac;margin-bottom:3px;">✦ \${f}</div>\`).join('')}</div>
+        <div><div style="font-size:11px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;">DESAFÍOS</div>\${(pl.desafios||[]).map(d=>\`<div style="font-size:13px;color:#fca5a5;margin-bottom:3px;">◆ \${d}</div>\`).join('')}</div>
+      </div>
+    </div>
+    <div style="background:rgba(168,85,247,0.05);border:1px solid rgba(168,85,247,0.2);border-radius:14px;padding:1.25rem;">
+      <div style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:2px;color:var(--violet4);margin-bottom:8px;">↑ MÁSCARA EXTERIOR — \${asc.sym} \${asc.sign}</div>
+      <div style="font-size:14px;line-height:1.8;">\${pa.desc||''}</div>
+    </div>
+  </div>\`;
+}
+
+function buildCarrera(planets, ascDeg) {
+  const sol = toSign(planets[0].lon);
+  const c = CARRERA[sol.sign] || {};
+  const marte = toSign(planets[4].lon);
+  const saturno = toSign(planets[6].lon);
+  return \`<div style="display:flex;flex-direction:column;gap:14px;">
+    <div style="background:rgba(56,189,248,0.05);border:1px solid rgba(56,189,248,0.2);border-radius:14px;padding:1.25rem;">
+      <div style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:2px;color:#38BDF8;margin-bottom:10px;">💼 VOCACIÓN Y CARRERA — \${sol.sym} \${sol.sign}</div>
+      <div style="font-size:11px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;">ÁREAS PROFESIONALES FAVORABLES</div>
+      <div style="font-size:14px;color:var(--text);margin-bottom:14px;">\${c.vocacion||''}</div>
+      <div style="font-size:11px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;">ESTILO DE TRABAJO</div>
+      <div style="font-size:14px;line-height:1.7;margin-bottom:14px;">\${c.estilo||''}</div>
+      <div style="font-size:11px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;">CONSEJO PROFESIONAL</div>
+      <div style="font-size:14px;line-height:1.7;margin-bottom:14px;color:#fcd34d;">\${c.consejo||''}</div>
+      <div style="font-size:11px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;">PLANETA CLAVE</div>
+      <div style="font-size:13px;color:var(--violet4);">\${c.planetaClave||''}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="background:rgba(248,113,113,0.05);border:1px solid rgba(248,113,113,0.2);border-radius:12px;padding:1rem;">
+        <div style="font-size:11px;color:#F87171;letter-spacing:1px;margin-bottom:6px;">♂ MARTE EN \${marte.sign.toUpperCase()}</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6;">Rige tu ambición, drive y cómo luchas por tus metas profesionales.</div>
+      </div>
+      <div style="background:rgba(148,163,184,0.05);border:1px solid rgba(148,163,184,0.2);border-radius:12px;padding:1rem;">
+        <div style="font-size:11px;color:#94a3b8;letter-spacing:1px;margin-bottom:6px;">♄ SATURNO EN \${saturno.sign.toUpperCase()}</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6;">Define tu área de mayor disciplina, responsabilidad y legado a largo plazo.</div>
+      </div>
+    </div>
+  </div>\`;
+}
+
+function buildDinero(planets) {
+  const sol = toSign(planets[0].lon);
+  const venus = toSign(planets[3].lon);
+  const jupiter = toSign(planets[5].lon);
+  const d = DINERO[sol.sign] || {};
+  return \`<div style="display:flex;flex-direction:column;gap:14px;">
+    <div style="background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.25);border-radius:14px;padding:1.25rem;">
+      <div style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:2px;color:var(--gold);margin-bottom:10px;">💰 DINERO Y ABUNDANCIA — \${sol.sym} \${sol.sign}</div>
+      <div style="font-size:11px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;">TU RELACIÓN CON EL DINERO</div>
+      <div style="font-size:14px;line-height:1.7;margin-bottom:14px;">\${d.estilo||''}</div>
+      <div style="font-size:11px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;">TU MAYOR FORTALEZA FINANCIERA</div>
+      <div style="font-size:14px;line-height:1.7;color:#86efac;margin-bottom:14px;">✦ \${d.fortaleza||''}</div>
+      <div style="font-size:11px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;">TU MAYOR DESAFÍO FINANCIERO</div>
+      <div style="font-size:14px;line-height:1.7;color:#fca5a5;margin-bottom:14px;">◆ \${d.desafio||''}</div>
+      <div style="background:rgba(255,215,0,0.08);border-radius:10px;padding:12px;border-left:3px solid var(--gold);">
+        <div style="font-size:13px;font-style:italic;line-height:1.6;">"\${d.afirmacion||''}"</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="background:rgba(244,114,182,0.05);border:1px solid rgba(244,114,182,0.2);border-radius:12px;padding:1rem;">
+        <div style="font-size:11px;color:#F472B6;letter-spacing:1px;margin-bottom:6px;">♀ VENUS EN \${venus.sign.toUpperCase()}</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6;">Define tus valores, lo que atraes y tu relación con el dinero y la belleza.</div>
+      </div>
+      <div style="background:rgba(168,85,247,0.05);border:1px solid rgba(168,85,247,0.2);border-radius:12px;padding:1rem;">
+        <div style="font-size:11px;color:var(--violet4);letter-spacing:1px;margin-bottom:6px;">♃ JÚPITER EN \${jupiter.sign.toUpperCase()}</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6;">Indica tu área de mayor suerte, expansión y abundancia natural.</div>
+      </div>
+    </div>
+  </div>\`;
+}
+
+function buildAmor(planets) {
+  const sol = toSign(planets[0].lon);
+  const venus = toSign(planets[3].lon);
+  const marte = toSign(planets[4].lon);
+  const a = AMOR[sol.sign] || {};
+  return \`<div style="display:flex;flex-direction:column;gap:14px;">
+    <div style="background:rgba(244,114,182,0.05);border:1px solid rgba(244,114,182,0.25);border-radius:14px;padding:1.25rem;">
+      <div style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:2px;color:#F472B6;margin-bottom:10px;">❤️ AMOR Y RELACIONES — \${sol.sym} \${sol.sign}</div>
+      <div style="font-size:11px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;">CÓMO AMAS</div>
+      <div style="font-size:14px;line-height:1.7;margin-bottom:14px;">\${a.estilo||''}</div>
+      <div style="font-size:11px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;">LO QUE BUSCAS</div>
+      <div style="font-size:14px;line-height:1.7;margin-bottom:14px;">\${a.busca||''}</div>
+      <div style="font-size:11px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;">MAYOR COMPATIBILIDAD</div>
+      <div style="font-size:14px;color:#86efac;margin-bottom:14px;">✦ \${a.compatibles||''}</div>
+      <div style="font-size:11px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;">DESAFÍO EN EL AMOR</div>
+      <div style="font-size:14px;color:#fca5a5;margin-bottom:14px;">◆ \${a.desafio||''}</div>
+      <div style="font-size:11px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;">TU LENGUAJE DEL AMOR</div>
+      <div style="font-size:14px;color:#F472B6;">♡ \${a.lenguaje||''}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="background:rgba(244,114,182,0.05);border:1px solid rgba(244,114,182,0.2);border-radius:12px;padding:1rem;">
+        <div style="font-size:11px;color:#F472B6;letter-spacing:1px;margin-bottom:6px;">♀ VENUS EN \${venus.sign.toUpperCase()}</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6;">Lo que te atrae, tu estilo de seducción y cómo das amor.</div>
+      </div>
+      <div style="background:rgba(248,113,113,0.05);border:1px solid rgba(248,113,113,0.2);border-radius:12px;padding:1rem;">
+        <div style="font-size:11px;color:#F87171;letter-spacing:1px;margin-bottom:6px;">♂ MARTE EN \${marte.sign.toUpperCase()}</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6;">Tu pasión, deseo y cómo persigues lo que quieres en el amor.</div>
+      </div>
+    </div>
+  </div>\`;
+}
+
+function buildMision(planets) {
+  const sol = toSign(planets[0].lon);
+  const m = MISION[sol.sign] || {};
+  const neptuno = toSign(planets[8].lon);
+  const pluton = toSign(planets[9].lon);
+  return \`<div style="display:flex;flex-direction:column;gap:14px;">
+    <div style="background:rgba(129,140,248,0.05);border:1px solid rgba(129,140,248,0.25);border-radius:14px;padding:1.25rem;">
+      <div style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:2px;color:#818CF8;margin-bottom:10px;">🌟 MISIÓN DE VIDA Y KARMA — \${sol.sym} \${sol.sign}</div>
+      <div style="font-size:11px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;">TU MISIÓN DE ALMA</div>
+      <div style="font-size:15px;font-weight:500;line-height:1.7;margin-bottom:14px;color:var(--text);">\${m.mision||''}</div>
+      <div style="font-size:11px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;">LECCIÓN DE VIDA (NODO NORTE)</div>
+      <div style="font-size:14px;line-height:1.7;margin-bottom:14px;">\${m.nodNorte||''}</div>
+      <div style="font-size:11px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;">KARMA DE VIDAS PASADAS</div>
+      <div style="font-size:14px;line-height:1.7;color:#fcd34d;margin-bottom:14px;">☽ \${m.karma||''}</div>
+      <div style="font-size:11px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;">TU DON PARA EL MUNDO</div>
+      <div style="font-size:14px;line-height:1.7;color:#86efac;margin-bottom:14px;">✦ \${m.don||''}</div>
+      <div style="background:rgba(129,140,248,0.08);border-radius:10px;padding:14px;border-left:3px solid #818CF8;text-align:center;">
+        <div style="font-size:11px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;">TU MANTRA DE VIDA</div>
+        <div style="font-size:15px;font-style:italic;line-height:1.6;color:#818CF8;">"\${m.mantra||''}"</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="background:rgba(129,140,248,0.05);border:1px solid rgba(129,140,248,0.2);border-radius:12px;padding:1rem;">
+        <div style="font-size:11px;color:#818CF8;letter-spacing:1px;margin-bottom:6px;">♆ NEPTUNO EN \${neptuno.sign.toUpperCase()}</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6;">Tu conexión espiritual, sueños e ideales generacionales.</div>
+      </div>
+      <div style="background:rgba(134,239,172,0.05);border:1px solid rgba(134,239,172,0.2);border-radius:12px;padding:1rem;">
+        <div style="font-size:11px;color:#86efac;letter-spacing:1px;margin-bottom:6px;">♇ PLUTÓN EN \${pluton.sign.toUpperCase()}</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6;">Tu poder de transformación y el karma colectivo de tu generación.</div>
+      </div>
+    </div>
+  </div>\`;
+}
+
+// ═══════════════════════════════════════
+// CALENDARIO COSMICO 2026
+// ═══════════════════════════════════════
+function getMoonPhases(year, month) {
+  // Approximate lunar phase calculation
+  const phases = [];
+  const knownNew = new Date(2026, 0, 29); // Known new moon Jan 29, 2026
+  const synodic = 29.53058867;
+  const start = new Date(year, month, 1);
+  const end = new Date(year, month + 1, 0);
+  
+  let base = knownNew.getTime();
+  // Find first phase near this month
+  const startTime = start.getTime();
+  const cycles = Math.floor((startTime - base) / (synodic * 86400000));
+  base = base + cycles * synodic * 86400000;
+  
+  for (let c = -1; c <= 2; c++) {
+    const newMoon = new Date(base + c * synodic * 86400000);
+    const firstQ = new Date(base + c * synodic * 86400000 + 7.38 * 86400000);
+    const fullMoon = new Date(base + c * synodic * 86400000 + 14.77 * 86400000);
+    const lastQ = new Date(base + c * synodic * 86400000 + 22.15 * 86400000);
+    
+    [
+      {date: newMoon, phase: 'Nueva', sym: '🌑', color: '#818CF8'},
+      {date: firstQ, phase: 'Cuarto Creciente', sym: '🌓', color: '#A855F7'},
+      {date: fullMoon, phase: 'Llena', sym: '🌕', color: '#FFD700'},
+      {date: lastQ, phase: 'Cuarto Menguante', sym: '🌗', color: '#C084FC'},
+    ].forEach(p => {
+      if (p.date >= start && p.date <= end) phases.push(p);
+    });
+  }
+  return phases.sort((a,b) => a.date - b.date);
+}
+
+const COSMIC_EVENTS_2026 = [
+  // Equinoccios y Solsticios
+  {date:'2026-03-20',name:'Equinoccio de Primavera',sym:'🌸',color:'#86efac',type:'solar',desc:'El Sol entra en Aries. Inicio del año astrológico. Tiempo de nuevos comienzos.'},
+  {date:'2026-06-21',name:'Solsticio de Verano',sym:'☀️',color:'#FFD700',type:'solar',desc:'El día más largo del año. El Sol en su máximo poder. Plenitud y abundancia.'},
+  {date:'2026-09-23',name:'Equinoccio de Otoño',sym:'🍂',color:'#FB923C',type:'solar',desc:'El Sol entra en Libra. Equilibrio entre luz y oscuridad. Tiempo de cosecha.'},
+  {date:'2026-12-21',name:'Solsticio de Invierno',sym:'❄️',color:'#38BDF8',type:'solar',desc:'La noche más larga. Renacimiento de la luz. Introspección y renovación.'},
+  // Eclipses 2026
+  {date:'2026-02-17',name:'Eclipse Solar Anular',sym:'🌑',color:'#F87171',type:'eclipse',desc:'Eclipse Solar en Acuario. Poderoso cierre de ciclos y nuevos comienzos colectivos.'},
+  {date:'2026-03-03',name:'Eclipse Lunar Total',sym:'🌕',color:'#F87171',type:'eclipse',desc:'Eclipse Lunar en Virgo. Revelaciones y culminaciones en salud, trabajo y servicio.'},
+  {date:'2026-08-12',name:'Eclipse Solar Total',sym:'🌑',color:'#F87171',type:'eclipse',desc:'Eclipse Solar en Leo. Transformaciones en identidad, creatividad y liderazgo.'},
+  {date:'2026-08-28',name:'Eclipse Lunar Parcial',sym:'🌕',color:'#F87171',type:'eclipse',desc:'Eclipse Lunar en Piscis. Liberación emocional profunda y despertar espiritual.'},
+  // Retrogradaciones Mercurio
+  {date:'2026-01-14',name:'Mercurio Retrógrado',sym:'☿',color:'#34d399',type:'retro',desc:'Inicio retro en Acuario. Revisa planes tecnológicos y comunicaciones grupales.'},
+  {date:'2026-02-04',name:'Mercurio Directo',sym:'☿',color:'#34d399',type:'direct',desc:'Mercurio retoma su marcha. Proyectos estancados comienzan a avanzar.'},
+  {date:'2026-05-10',name:'Mercurio Retrógrado',sym:'☿',color:'#34d399',type:'retro',desc:'Inicio retro en Géminis. Cuidado con contratos, viajes y comunicaciones.'},
+  {date:'2026-06-03',name:'Mercurio Directo',sym:'☿',color:'#34d399',type:'direct',desc:'Mercurio directo. Buen momento para firmar contratos y tomar decisiones.'},
+  {date:'2026-09-12',name:'Mercurio Retrógrado',sym:'☿',color:'#34d399',type:'retro',desc:'Inicio retro en Libra. Revisa relaciones y acuerdos. Evita decisiones precipitadas.'},
+  {date:'2026-10-03',name:'Mercurio Directo',sym:'☿',color:'#34d399',type:'direct',desc:'Mercurio directo en Virgo. Claridad mental y proyectos retomados.'},
+  // Venus
+  {date:'2026-07-22',name:'Venus Retrógrado',sym:'♀',color:'#F472B6',type:'retro',desc:'Venus retro en Leo. Revisa relaciones, finanzas y autoestima. No inicies romances.'},
+  {date:'2026-09-04',name:'Venus Directo',sym:'♀',color:'#F472B6',type:'direct',desc:'Venus directo. Las relaciones y finanzas se estabilizan y mejoran.'},
+  // Júpiter
+  {date:'2026-03-11',name:'Júpiter Directo',sym:'♃',color:'#A855F7',type:'direct',desc:'Júpiter directo en Cáncer. Expansión en hogar, familia y bienestar emocional.'},
+  {date:'2026-11-05',name:'Júpiter Retrógrado',sym:'♃',color:'#A855F7',type:'retro',desc:'Júpiter retro en Leo. Revisa tu crecimiento personal y proyectos de expansión.'},
+  // Saturno
+  {date:'2026-05-20',name:'Saturno Retrógrado',sym:'♄',color:'#94a3b8',type:'retro',desc:'Saturno retro en Aries. Revisa tus estructuras, límites y responsabilidades.'},
+  {date:'2026-10-05',name:'Saturno Directo',sym:'♄',color:'#94a3b8',type:'direct',desc:'Saturno directo. Las lecciones kármicas se integran y la disciplina da frutos.'},
+  // Urano
+  {date:'2026-01-26',name:'Urano Directo',sym:'⛢',color:'#38BDF8',type:'direct',desc:'Urano directo en Tauro. Cambios en finanzas, tecnología y valores materiales.'},
+  {date:'2026-09-06',name:'Urano Retrógrado',sym:'⛢',color:'#38BDF8',type:'retro',desc:'Urano retro en Géminis. Revisión de cambios en comunicación e ideas.'},
+  // Neptuno
+  {date:'2026-06-15',name:'Neptuno Retrógrado',sym:'♆',color:'#818CF8',type:'retro',desc:'Neptuno retro en Aries. Revisa ilusiones, sueños y conexiones espirituales.'},
+  {date:'2026-11-22',name:'Neptuno Directo',sym:'♆',color:'#818CF8',type:'direct',desc:'Neptuno directo. La inspiración y la claridad espiritual regresan con fuerza.'},
+  // Plutón
+  {date:'2026-05-04',name:'Plutón Retrógrado',sym:'♇',color:'#86efac',type:'retro',desc:'Plutón retro en Acuario. Transformaciones internas profundas en lo colectivo.'},
+  {date:'2026-10-14',name:'Plutón Directo',sym:'♇',color:'#86efac',type:'direct',desc:'Plutón directo. Los cambios de poder y transformación colectiva avanzan.'},
+  // Marte
+  {date:'2026-06-01',name:'Marte Retrógrado',sym:'♂',color:'#F87171',type:'retro',desc:'Marte retro en Sagitario. Evita conflictos. Revisa proyectos y dirección de vida.'},
+  {date:'2026-08-10',name:'Marte Directo',sym:'♂',color:'#F87171',type:'direct',desc:'Marte directo. Tu energía y drive regresan con fuerza renovada.'},
+];
+
+function renderCalendario() {
+  const now = new Date();
+  const months = [];
+  for (let m = 0; m < 12; m++) {
+    months.push({month: m, name: new Date(2026, m, 1).toLocaleDateString('es', {month:'long', year:'numeric'})});
+  }
+  
+  let html = \`<div style="margin-bottom:1.5rem;">
+    <div style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:3px;color:var(--violet4);text-align:center;margin-bottom:16px;">CALENDARIO CÓSMICO 2026</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:1.5rem;">\`;
+  
+  // Legend
+  [
+    {sym:'🌑🌕',label:'Fases Lunares',color:'#FFD700'},
+    {sym:'☀️❄️',label:'Equinoccios/Solsticios',color:'#86efac'},
+    {sym:'🔴',label:'Eclipses',color:'#F87171'},
+    {sym:'☿',label:'Retrogradaciones',color:'#C084FC'},
+  ].forEach(l => {
+    html += \`<div style="padding:4px 12px;border-radius:20px;border:1px solid \${l.color}33;background:\${l.color}11;font-size:11px;color:\${l.color};">\${l.sym} \${l.label}</div>\`;
+  });
+  
+  html += \`</div>\`;
+
+  // Month selector
+  html += \`<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:1.5rem;" id="month-btns">\`;
+  months.forEach((m,i) => {
+    const active = i === now.getMonth() ? \`background:rgba(168,85,247,0.2);border-color:var(--violet3);color:var(--text);\` : '';
+    html += \`<button onclick="showMonth(\${i})" id="mbtn-\${i}" style="\${active}padding:6px 12px;border:1px solid var(--border);border-radius:20px;cursor:pointer;font-size:12px;color:var(--text2);background:transparent;font-family:'Raleway',sans-serif;transition:all 0.15s;">\${new Date(2026,i,1).toLocaleDateString('es',{month:'short'}).toUpperCase()}</button>\`;
+  });
+  html += \`</div>\`;
+  html += \`<div id="month-content"></div></div>\`;
+  
+  return html;
+}
+
+function showMonth(m) {
+  document.querySelectorAll('[id^="mbtn-"]').forEach(b => {
+    b.style.background = 'transparent';
+    b.style.borderColor = 'rgba(168,85,247,0.25)';
+    b.style.color = 'var(--text2)';
+  });
+  const btn = document.getElementById('mbtn-'+m);
+  if(btn){btn.style.background='rgba(168,85,247,0.2)';btn.style.borderColor='var(--violet3)';btn.style.color='var(--text)';}
+  
+  const phases = getMoonPhases(2026, m);
+  const events = COSMIC_EVENTS_2026.filter(e => {
+    const d = new Date(e.date);
+    return d.getMonth() === m;
+  });
+  
+  const monthName = new Date(2026, m, 1).toLocaleDateString('es', {month:'long', year:'numeric'});
+  let html = \`<div style="font-family:'Cinzel',serif;font-size:16px;letter-spacing:2px;text-align:center;margin-bottom:1rem;color:var(--violet4);">\${monthName.toUpperCase()}</div>\`;
+  
+  // Lunar phases
+  if(phases.length) {
+    html += \`<div style="margin-bottom:1rem;"><div style="font-size:11px;letter-spacing:2px;color:var(--text2);margin-bottom:8px;">FASES LUNARES</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;">\`;
+    phases.forEach(p => {
+      html += \`<div style="background:rgba(255,255,255,0.03);border:1px solid \${p.color}33;border-radius:12px;padding:10px;text-align:center;">
+        <div style="font-size:22px;margin-bottom:4px;">\${p.sym}</div>
+        <div style="font-size:12px;font-weight:500;color:\${p.color};margin-bottom:2px;">Luna \${p.phase}</div>
+        <div style="font-size:12px;color:var(--text2);">\${p.date.toLocaleDateString('es',{weekday:'short',day:'numeric'})}</div>
+      </div>\`;
+    });
+    html += \`</div></div>\`;
+  }
+  
+  // Cosmic events
+  if(events.length) {
+    html += \`<div><div style="font-size:11px;letter-spacing:2px;color:var(--text2);margin-bottom:8px;">EVENTOS CÓSMICOS</div>\`;
+    events.forEach(e => {
+      const d = new Date(e.date);
+      const typeLabel = e.type==='retro'?'RETRÓGRADO':e.type==='direct'?'DIRECTO':e.type==='eclipse'?'ECLIPSE':e.type==='solar'?'EVENTO SOLAR':'';
+      html += \`<div style="display:flex;gap:12px;align-items:flex-start;padding:12px;background:rgba(255,255,255,0.02);border:1px solid \${e.color}22;border-radius:12px;margin-bottom:8px;">
+        <div style="text-align:center;min-width:44px;">
+          <div style="font-size:20px;">\${e.sym}</div>
+          <div style="font-size:11px;color:var(--text2);">\${d.toLocaleDateString('es',{day:'numeric',month:'short'})}</div>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:500;color:\${e.color};margin-bottom:2px;">\${e.name}</div>
+          <div style="font-size:11px;color:\${e.color}99;letter-spacing:1px;margin-bottom:4px;">\${typeLabel}</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.5;">\${e.desc}</div>
+        </div>
+      </div>\`;
+    });
+    html += \`</div>\`;
+  }
+  
+  if(!phases.length && !events.length) {
+    html += \`<div style="text-align:center;padding:2rem;color:var(--text2);font-size:13px;">Mes tranquilo energéticamente. Ideal para consolidar y descansar.</div>\`;
+  }
+  
+  document.getElementById('month-content').innerHTML = html;
+}
+
+// ═══════════════════════════════════════
+// SINASTRIA
+// ═══════════════════════════════════════
+function calcSinastria() {
+  const bd1 = document.getElementById('sin-bd1').value;
+  const bt1 = document.getElementById('sin-bt1').value;
+  const lat1 = parseFloat(document.getElementById('sin-lat1').value);
+  const lon1 = parseFloat(document.getElementById('sin-lon1').value);
+  const name1 = document.getElementById('sin-name1').value || 'Persona 1';
+  
+  const bd2 = document.getElementById('sin-bd2').value;
+  const bt2 = document.getElementById('sin-bt2').value;
+  const lat2 = parseFloat(document.getElementById('sin-lat2').value);
+  const lon2 = parseFloat(document.getElementById('sin-lon2').value);
+  const name2 = document.getElementById('sin-name2').value || 'Persona 2';
+  
+  if(!bd1||!bd2||isNaN(lat1)||isNaN(lat2)){
+    document.getElementById('sin-result').innerHTML='<div style="color:#fca5a5;font-size:13px;padding:1rem;">Completa los datos de ambas personas.</div>';
+    document.getElementById('sin-result').style.display='block';
+    return;
+  }
+  
+  const getJD = (dateVal, timeVal) => {
+    const[Y,Mo,D]=dateVal.split('-').map(Number),[H,Mi]=timeVal.split(':').map(Number);
+    return new Date(Date.UTC(Y,Mo-1,D,H,Mi)).valueOf()/86400000+2440587.5;
+  };
+  
+  const jd1 = getJD(bd1, bt1);
+  const jd2 = getJD(bd2, bt2);
+  
+  const getPlanets = (jd) => [
+    {name:'Sol',lon:sunLon(jd)},{name:'Luna',lon:moonLon(jd)},
+    {name:'Mercurio',lon:pLon(jd,252.251,4.092377)},{name:'Venus',lon:pLon(jd,181.979,1.602136)},
+    {name:'Marte',lon:pLon(jd,355.433,0.524033)},{name:'Júpiter',lon:pLon(jd,34.351,0.083086)},
+    {name:'Saturno',lon:pLon(jd,50.077,0.033371)},
+  ];
+  
+  const p1 = getPlanets(jd1);
+  const p2 = getPlanets(jd2);
+  const asc1 = ascendant(jd1, lat1, lon1);
+  const asc2 = ascendant(jd2, lat2, lon2);
+  
+  const sol1 = toSign(p1[0].lon);
+  const luna1 = toSign(p1[1].lon);
+  const asc1s = toSign(asc1);
+  const sol2 = toSign(p2[0].lon);
+  const luna2 = toSign(p2[1].lon);
+  const asc2s = toSign(asc2);
+  
+  // Cross aspects
+  const crossAspects = [];
+  for(const pp1 of p1) {
+    for(const pp2 of p2) {
+      const diff = Math.abs(pp1.lon - pp2.lon) % 360;
+      const ang = diff > 180 ? 360-diff : diff;
+      for(const asp of ASPECTS_DEF) {
+        if(Math.abs(ang-asp.angle) <= asp.orb) {
+          crossAspects.push({p1:pp1.name, p2:pp2.name, asp, orb:(Math.abs(ang-asp.angle)).toFixed(1)});
+          break;
+        }
+      }
+    }
+  }
+  
+  // Compatibility score
+  let score = 50;
+  crossAspects.forEach(a => {
+    if(a.asp.type==='harmonic') score += 5;
+    if(a.asp.type==='tense') score -= 2;
+    if(a.asp.type==='neutral') score += 2;
+    if(a.p1==='Sol'||a.p2==='Sol') score += 3;
+    if(a.p1==='Venus'||a.p2==='Venus') score += 4;
+    if(a.p1==='Luna'||a.p2==='Luna') score += 3;
+  });
+  score = Math.min(99, Math.max(40, score));
+  
+  const scoreColor = score >= 80 ? '#86efac' : score >= 65 ? '#FFD700' : '#FB923C';
+  const scoreLabel = score >= 80 ? 'Altamente Compatible ✦' : score >= 65 ? 'Compatible ✦' : 'Complementario ✦';
+  
+  const COMPAT = {
+    'Aries':{'Aries':'Fuego doble — pasión intensa pero posibles roces de ego.','Leo':'Conexión solar magnética. Ambos brillan juntos.','Sagitario':'Aventura sin límites. Se inspiran mutuamente.','Libra':'Opuestos que se complementan. Atracción poderosa.','Géminis':'Energía y dinamismo. Se divierten mucho juntos.','Acuario':'Ideas y acción. Se potencian mutuamente.'},
+  };
+  
+  document.getElementById('sin-result').style.display = 'block';
+  document.getElementById('sin-result').innerHTML = \`
+    <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:20px;overflow:hidden;">
+      <div style="background:linear-gradient(135deg,rgba(168,85,247,0.15),rgba(244,114,182,0.1));padding:1.5rem;text-align:center;">
+        <div style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:2px;color:var(--violet4);margin-bottom:12px;">ANÁLISIS DE COMPATIBILIDAD</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:1.5rem;flex-wrap:wrap;margin-bottom:16px;">
+          <div style="text-align:center;">
+            <div style="font-size:20px;font-weight:500;">\${name1}</div>
+            <div style="font-size:13px;color:var(--text2);">\${sol1.sym} \${sol1.sign} · \${luna1.sym} \${luna1.sign} · ↑\${asc1s.sign}</div>
+          </div>
+          <div style="font-size:28px;color:var(--pink);">♡</div>
+          <div style="text-align:center;">
+            <div style="font-size:20px;font-weight:500;">\${name2}</div>
+            <div style="font-size:13px;color:var(--text2);">\${sol2.sym} \${sol2.sign} · \${luna2.sym} \${luna2.sign} · ↑\${asc2s.sign}</div>
+          </div>
+        </div>
+        <div style="font-size:52px;font-weight:700;color:\${scoreColor};font-family:'Cinzel',serif;">\${score}%</div>
+        <div style="font-size:14px;color:\${scoreColor};margin-top:4px;">\${scoreLabel}</div>
+      </div>
+      
+      <div style="padding:1.25rem;">
+        <div style="font-size:11px;letter-spacing:2px;color:var(--text2);margin-bottom:10px;">ASPECTOS ENTRE LAS CARTAS (\${crossAspects.length} encontrados)</div>
+        \${crossAspects.slice(0,12).map(a=>\`
+          <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;flex-wrap:wrap;">
+            <span style="color:\${PCOL[a.p1]};font-size:15px;">\${PSYM[a.p1]}</span>
+            <span style="font-size:11px;color:var(--text2);">\${name1}</span>
+            <span style="font-size:16px;color:\${a.asp.col}">\${a.asp.sym}</span>
+            <span style="color:\${PCOL[a.p2]};font-size:15px;">\${PSYM[a.p2]}</span>
+            <span style="font-size:11px;color:var(--text2);">\${name2}</span>
+            <span style="font-size:12px;color:var(--text2);">\${a.asp.name} (\${a.orb}°)</span>
+            <span style="padding:2px 8px;border-radius:10px;font-size:11px;background:\${a.asp.type==='harmonic'?'rgba(134,239,172,0.1)':a.asp.type==='tense'?'rgba(248,113,113,0.1)':'rgba(168,85,247,0.1)'};color:\${a.asp.type==='harmonic'?'#86efac':a.asp.type==='tense'?'#fca5a5':'var(--violet4)'};">\${a.asp.type==='harmonic'?'Armónico':a.asp.type==='tense'?'Tenso':'Neutro'}</span>
+          </div>\`).join('')}
+        \${crossAspects.length===0?'<div style="color:var(--text2);font-size:13px;padding:1rem 0;">Sin aspectos mayores encontrados.</div>':''}
+      </div>
+    </div>\`;
+}
+
+
+function searchCitySin(v, num) {
+  const cl = document.getElementById('sin-city-list'+num);
+  if(!v||v.length<2){cl.style.display='none';return;}
+  const res = CITIES.filter(c=>c.n.toLowerCase().includes(v.toLowerCase())).slice(0,6);
+  if(!res.length){cl.style.display='none';return;}
+  cl.innerHTML = res.map(c=>`<div class="city-item" onclick="selectCitySin('${c.n}',${c.lat},${c.lon},'${num}')">${c.n}</div>`).join('');
+  cl.style.display='block';
+}
+function selectCitySin(name, lat, lon, num) {
+  document.getElementById('sin-city'+num).value = name;
+  document.getElementById('sin-lat'+num).value = lat;
+  document.getElementById('sin-lon'+num).value = lon;
+  document.getElementById('sin-city-list'+num).style.display='none';
+}
+
 // INIT
-applyLang();
-initAngel();
+try { applyLang(); } catch(e) { console.error('applyLang error:', e); }
+try { initAngel(); } catch(e) { console.error('initAngel error:', e); }
+try { updateClock(); renderHoras(); } catch(e) { console.error('clock error:', e); }
+// Init calendario
+setTimeout(()=>{ try{ const cal=document.getElementById('cal-content');if(cal)cal.innerHTML=renderCalendario();showMonth(new Date().getMonth()); }catch(e){console.error('cal error:',e);} },500);
 </script>
 
 <!-- SERVICIOS -->
@@ -1002,6 +1565,59 @@ initAngel();
     <div style="font-family:'Cinzel',serif;font-size:14px;color:var(--violet4);margin-bottom:8px;">✦ El poder de la manifestación ✦</div>
     <div style="font-size:13px;color:var(--text2);line-height:1.7;">El Cheque del Universo es una herramienta de manifestación poderosa. Al escribir tu nombre y la cantidad que deseas recibir, estás enviando una orden directa al universo. Las secuencias de Grabovoi amplifican tu intención multiplicando su poder.</div>
   </div>
+</div>
+
+
+<!-- CALENDARIO COSMICO -->
+<div id="s-calendario" class="sec">
+  <div id="cal-content"></div>
+</div>
+
+<!-- SINASTRIA -->
+<div id="s-sinastria" class="sec">
+  <div style="text-align:center;padding:1rem 0 1.5rem;">
+    <div style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:3px;color:var(--violet4);margin-bottom:6px;">SINASTRÍA · COMPATIBILIDAD</div>
+    <div style="font-size:13px;color:var(--text2);">Compara dos cartas natales y descubre la compatibilidad</div>
+  </div>
+  
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:1.5rem;" class="grid2">
+    <!-- Persona 1 -->
+    <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:16px;padding:1.25rem;">
+      <div style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:2px;color:var(--violet4);margin-bottom:12px;">PERSONA 1</div>
+      <div class="fg"><label>Nombre</label><input type="text" id="sin-name1" placeholder="Tu nombre"></div>
+      <div class="fg"><label>Fecha de nacimiento</label><input type="date" id="sin-bd1"></div>
+      <div class="fg"><label>Hora</label><input type="time" id="sin-bt1" value="12:00"></div>
+      <div class="fg">
+        <label>Ciudad</label>
+        <div class="city-wrap">
+          <input type="text" id="sin-city1" placeholder="Escribe una ciudad..." oninput="searchCitySin(this.value,'1')" autocomplete="off">
+          <div class="city-list" id="sin-city-list1" style="display:none;"></div>
+        </div>
+      </div>
+      <input type="hidden" id="sin-lat1"><input type="hidden" id="sin-lon1">
+    </div>
+    <!-- Persona 2 -->
+    <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:16px;padding:1.25rem;">
+      <div style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:2px;color:#F472B6;margin-bottom:12px;">PERSONA 2</div>
+      <div class="fg"><label>Nombre</label><input type="text" id="sin-name2" placeholder="Su nombre"></div>
+      <div class="fg"><label>Fecha de nacimiento</label><input type="date" id="sin-bd2"></div>
+      <div class="fg"><label>Hora</label><input type="time" id="sin-bt2" value="12:00"></div>
+      <div class="fg">
+        <label>Ciudad</label>
+        <div class="city-wrap">
+          <input type="text" id="sin-city2" placeholder="Escribe una ciudad..." oninput="searchCitySin(this.value,'2')" autocomplete="off">
+          <div class="city-list" id="sin-city-list2" style="display:none;"></div>
+        </div>
+      </div>
+      <input type="hidden" id="sin-lat2"><input type="hidden" id="sin-lon2">
+    </div>
+  </div>
+  
+  <div style="text-align:center;margin-bottom:1.5rem;">
+    <button class="btn btn-primary" onclick="calcSinastria()" style="padding:12px 36px;font-size:15px;">♡ Calcular Compatibilidad</button>
+  </div>
+  
+  <div id="sin-result" style="display:none;"></div>
 </div>
 
 </body>
